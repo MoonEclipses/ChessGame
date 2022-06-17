@@ -11,6 +11,15 @@ public class Tile {
         this.piece = piece;
     }
 
+    public boolean isOcupied(){
+        if (piece!=null){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
     public Piece getPiece() {
         return piece;
     }
