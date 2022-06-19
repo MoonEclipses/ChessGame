@@ -21,6 +21,18 @@ public class Position {
         return x == position.x && y == position.y;
     }
 
+    public Position sum(Position term){
+        return new Position(x + term.x,y+ term.y);
+    }
+
+    public static boolean isPosible(Position position){
+        if(position.x>=0 && position.x<8 && position.y>=0 && position.y<8){
+            return true;
+        }else {
+            return false;
+        }
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(x, y);
