@@ -18,12 +18,13 @@ public class Board {
     private Set<Position> whiteThreatMap;
     private Set<Position> blackThreatMap;
 
-    private static String[] standartArrangment = new String[]{"R", "N", "B", "Q", "K", "B", "N", "R",
+    private static String[] standartArrangment = new String[]
+            {"R", "N", "B", "Q", "K", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P",
             "-", "-", "-", "-", "-", "-", "-", "-",
             "-", "-", "-", "-", "-", "-", "-", "-",
             "-", "-", "-", "-", "-", "-", "-", "-",
-            "-", "-", "-", "-", "-", "-", "-", "-",
+            "-", "-", "-", "-", "-", "-", "p", "-",
             "p", "p", "p", "p", "p", "p", "p", "p",
             "r", "n", "b", "q", "k", "b", "n", "r",};
     Map<String, Piece> signs;
@@ -70,10 +71,17 @@ public class Board {
     public void arrangePieces() {
         for (int i = 0; i < standartArrangment.length; i++) {
             String str = standartArrangment[i];
-            Piece newPiece = signs.get(str);
-            if (newPiece != null) {
+            Piece signedPiece = signs.get(str);
+            if (signedPiece != null) {
+                Piece newPiece = null;
+                try {
+                    newPiece = (Piece) signedPiece.clone();
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
                 newPiece.setPos(pos(i % 8, i / 8));
-                getTile(newPiece.getPos()).setPiece(newPiece);
+                Tile tile = getTile(newPiece.getPos());
+                tile.setPiece(newPiece);
                 if (newPiece.getColor() == Color.WHITE) {
                     whitePieces.add(newPiece);
                 } else {
@@ -114,16 +122,14 @@ public class Board {
     public void visualizeConsoleBoard() {
         for (int i = 7; i >= 0; i--) {
             for (int j = 0; j < 8; j++) {
-                if (board[j][i].isOcupied()) {
+                if (getTile(pos(j,i)).isOcupied()) {
                     for (Map.Entry<String,Piece> entry:signs.entrySet()){
-                        if(entry.getValue().equals(board[j][i].getPiece())){
+                        if(entry.getValue().equals(getTile(pos(j,i)).getPiece())){
                             System.out.print(entry.getKey());
                         }
                     }
-                } else if (board[j][i].getColor() == Color.BLACK) {
-                    System.out.print('#');
-                } else {
-                    System.out.print('0');
+                }else {
+                    System.out.print('_');
                 }
                 System.out.print(' ');
             }
@@ -147,7 +153,23 @@ public class Board {
             System.out.println();
         }
     }
+    public Piece getWhiteKing(){
+        for(Piece piece:whitePieces){
+            if (piece instanceof King){
+                return piece;
+            }
+        }
+        return null;
+    }
 
+    public Piece getBlackKing(){
+        for(Piece piece:blackPieces){
+            if (piece instanceof King){
+                return piece;
+            }
+        }
+        return null;
+    }
     public Set<Position> getWhiteThreatMap() {
         return whiteThreatMap;
     }

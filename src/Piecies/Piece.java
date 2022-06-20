@@ -3,11 +3,12 @@ package Piecies;
 import Game.Board;
 import Game.Color;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class Piece {
+public abstract class Piece implements Cloneable{
     protected Position pos;//position on board
     protected Color color;//Color
     protected Position[] movingOffset;//How can piece move from current position
@@ -44,10 +45,14 @@ public abstract class Piece {
 
     public abstract Set<Position> calculateLegalMoves(Board board);
 
+    public abstract Set<Position> calculateAttackMoves(Board board);
+
     public void calculateStartingAttackedPositions(Board board){
         attackedPositions.clear();
         attackedPositions.addAll(calculateLegalMoves(board));
     }
+
+
 
     public List<Position> getMovingHistory() {
         return movingHistory;
@@ -68,5 +73,11 @@ public abstract class Piece {
     @Override
     public int hashCode() {
         return Objects.hash(color);
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        Piece newPiece = (Piece) super.clone();
+        return newPiece;
     }
 }

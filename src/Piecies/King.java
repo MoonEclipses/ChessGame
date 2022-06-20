@@ -36,8 +36,9 @@ public class King extends Piece {
             finTile.setPiece(this);
             pos = distPos;
             attackedPositions.clear();
-            attackedPositions.addAll(calculateLegalMoves(board));
+            attackedPositions.addAll(calculateAttackMoves(board));
             movingHistory.add(distPos);
+            board.calculateThreatMaps();
             return true;
         } else return false;
     }
@@ -79,25 +80,40 @@ public class King extends Piece {
     public boolean isChecked(Board board) {
         if (color == Color.WHITE) {
             return board.getBlackThreatMap().contains(pos);
-        }else {
+        } else {
             return board.getWhiteThreatMap().contains(pos);
         }
     }
-    public List<Piece> getCheckers(Board board){
+
+    public List<Piece> getCheckers(Board board) {
         List<Piece> pieces = new ArrayList<>();
         if (color == Color.WHITE) {
-            for(Piece piece:board.getBlackPieces()){
-                if(piece.getAttackedPositions().contains(pos)){
+            for (Piece piece : board.getBlackPieces()) {
+                if (piece.getAttackedPositions().contains(pos)) {
                     pieces.add(piece);
                 }
             }
-        }else {
-            for(Piece piece:board.getWhitePieces()){
-                if(piece.getAttackedPositions().contains(pos)){
+        } else {
+            for (Piece piece : board.getWhitePieces()) {
+                if (piece.getAttackedPositions().contains(pos)) {
                     pieces.add(piece);
                 }
             }
         }
         return pieces;
+    }
+
+    @Override
+    public Set<Position> calculateAttackMoves(Board board) {
+        Set<Position> legalMoves = new HashSet<>();
+        for (Position move : movingOffset) {
+            Position distPos = pos.sum(move);
+            if (!Position.isPosible(distPos)) {
+                continue;
+            }
+            Tile distTile = board.getTile(distPos);
+            legalMoves.add(distPos);
+        }
+        return legalMoves;
     }
 }

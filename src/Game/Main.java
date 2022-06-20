@@ -1,8 +1,10 @@
 package Game;
 
 import Piecies.Piece;
+import Piecies.Rook;
 
 import java.util.List;
+import java.util.Random;
 
 import static Piecies.Position.pos;
 
@@ -12,18 +14,37 @@ public class Main {
         board.getStandartBoard();
         board.arrangePieces();
         board.visualizeConsoleBoard();
-        List<Piece> pieces = board.getWhitePieces();
-        for (int i = 3; i < 8; i++) {
-            System.out.println();
-            System.out.println();
-            System.out.println();
-            System.out.println();
-            if (pieces.get(12).move(pos(7,i),board)){
-                board.visualizeConsoleBoard();
-            }else {
-                System.out.println("move not success");
-            }
-            board.calculateThreatMaps();
+        List<Piece> whitePieces = board.getWhitePieces();
+        List<Piece> blackPieces = board.getBlackPieces();
+        System.out.println("\n\n\n");
+        Piece piece = whitePieces.get(12);
+        if (piece.move(pos(4, 3), board)) {
+            board.visualizeConsoleBoard();
+        } else {
+            System.out.println("move not success");
+        }
+        System.out.println("\n\n\n");
+        piece = whitePieces.get(3);
+        if (piece.move(pos(7, 4), board)) {
+            board.visualizeConsoleBoard();
+        } else {
+            System.out.println("move not success");
+        }
+
+
+        System.out.println("\n\n\n");
+        piece = blackPieces.get(6);
+        if (piece.move(pos(5, 4), board)) {
+            board.visualizeConsoleBoard();
+        } else {
+            System.out.println("move not success");
+        }
+        System.out.println("\n\n\n");
+        piece = blackPieces.get(6);
+        if (piece.move(pos(4, 3), board)) {
+            board.visualizeConsoleBoard();
+        } else {
+            System.out.println("move not success");
         }
     }
 }

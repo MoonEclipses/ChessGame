@@ -2,7 +2,7 @@ package Piecies;
 
 import java.util.Objects;
 
-public class Position {
+public class Position{
     public int x;
     public int y;
 
@@ -37,4 +37,5 @@ public class Position {
     public int hashCode() {
         return Objects.hash(x, y);
     }
+
 }
