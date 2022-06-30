@@ -2,7 +2,7 @@ package Piecies;
 
 import java.util.Objects;
 
-public class Position{
+public class Position implements Cloneable{
     public int x;
     public int y;
 
@@ -38,4 +38,8 @@ public class Position{
         return Objects.hash(x, y);
     }
 
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }

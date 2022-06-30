@@ -29,21 +29,43 @@ public class Pawn extends Piece {
             Tile curTile = board.getTile(pos);
             curTile.setPiece(null);//set curTile piece null
             Tile finTile = board.getTile(distPos);
+            if (!finTile.isOcupied() && (Math.abs(pos.x - distPos.x) == Math.abs(pos.y - distPos.y))) {
+                enPassant(distPos, board);
+                return true;
+            }
+            Piece capturedPiece = null;
             if (finTile.isOcupied()) {
-                Piece capturedPiece = finTile.getPiece();
+                capturedPiece = finTile.getPiece();
                 List<Piece> pieces;
                 if (capturedPiece.getColor() == Color.WHITE) pieces = board.getWhitePieces();
                 else pieces = board.getBlackPieces();
                 pieces.remove(capturedPiece);//if tile is ocupied remove captured piece from the list of pieces
             }
             finTile.setPiece(this);//set finTile piece -> this piece
+            board.addToMovingHistory(pos, distPos, capturedPiece);
             pos = distPos;//update position
-            attackedPositions.clear();
-            attackedPositions.addAll(calculateAttackMoves(board));//update attacked position
+            board.recalculateAttackingPositions();//update attacked position
             movingHistory.add(distPos);//add move to history
-            board.calculateThreatMaps();
             return true;
         } else return false;
+    }
+
+    private void enPassant(Position distPos, Board board) {
+        Tile finTile = board.getTile(distPos);
+        Tile capturedPawnTile = board.getTile(pos(distPos.x, pos.y));
+        Piece capturedPawn = capturedPawnTile.getPiece();
+        if (capturedPawn.getColor() == Color.WHITE) {
+            board.getWhitePieces().remove(capturedPawn);
+        } else {
+            board.getBlackPieces().remove(capturedPawn);
+        }
+        capturedPawnTile.setPiece(null);
+        finTile.setPiece(this);
+        board.addToMovingHistory(pos, distPos, capturedPawn);
+        board.getMovingHistory().get(board.getMovingHistory().size() - 1).setEnPassant(true);
+        this.pos = distPos;
+        board.recalculateAttackingPositions();//update attacked position
+        movingHistory.add(distPos);//add move to history
     }
 
     @Override
@@ -51,140 +73,84 @@ public class Pawn extends Piece {
         Set<Position> legalMoves = new HashSet<>();
         List<Piece> pieces;
         King king;
+        int a, b;
         if (color == Color.WHITE) {
             king = (King) board.getWhiteKing();
             pieces = board.getBlackPieces();
+            a = 0;
+            b = 2;
         } else {
             king = (King) board.getBlackKing();
             pieces = board.getWhitePieces();
+            a = 2;
+            b = 4;
         }
-        if (this.color == Color.WHITE) {
-            for (int i = 0; i < 2; i++) {
-                Position move = movingOffset[i];
-                Position distPos = pos.sum(move);
-
-                king = (King) board.getWhiteKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker instanceof SlidingPiece) {//if piece is sliding
-                        Set<Position> positions = ((SlidingPiece) checker).getPositionsToDefend(checker.getPos(), king.getPos());
-                        positions.remove(checker.getPos());
-                        if (positions.contains(distPos)) {
-                            legalMoves.add(distPos);
-                        } else {
-                            break;
-                        }
-                    } else {//pawn and knight
-                        break;
-                    }
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
-                    break;
-                }
-
-                if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
-                    continue;
-                }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {
-                    continue;
-                }
-                if (i == 1 && movingHistory.isEmpty()) {
-                    legalMoves.add(distPos);
-                } else if (i == 0) {
-                    legalMoves.add(distPos);
-                }
-            }
-            for (int i = 0; i < 2; i++) {
-                Position move = attackingOffset[i];
-                Position distPos = pos.sum(move);
-
-                king = (King) board.getWhiteKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker.getPos().equals(distPos)) {
-                        legalMoves.add(distPos);
-                    } else break;
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
-                    break;
-                }
-
-                if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
-                    continue;
-                }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {//if tile ocupied check if color of piece same or not
-                    Color attackedPieceColor = distTile.getPiece().getColor();
-                    if (attackedPieceColor != color) {
+        for (int i = a; i < b; i++) {
+            Position move = movingOffset[i];
+            Position distPos = pos.sum(move);
+            if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
+                Piece checker = king.getCheckers(board).get(0);
+                if (checker instanceof SlidingPiece) {//if piece is sliding
+                    Set<Position> positions = ((SlidingPiece) checker).getPositionsToDefend(checker.getPos(), king.getPos());
+                    positions.remove(checker.getPos());
+                    if (positions.contains(distPos)) {
                         legalMoves.add(distPos);
                     } else {
                         continue;
                     }
-                }
-            }
-        } else {
-            for (int i = 2; i < 4; i++) {
-                Position move = movingOffset[i];
-                Position distPos = pos.sum(move);
-
-                king = (King) board.getBlackKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker instanceof SlidingPiece) {//if piece is sliding
-                        Set<Position> positions = ((SlidingPiece) checker).getPositionsToDefend(checker.getPos(), king.getPos());
-                        positions.remove(checker.getPos());
-                        if (positions.contains(distPos)) {
-                            legalMoves.add(distPos);
-                        } else {
-                            break;
-                        }
-                    } else {//pawn and knight
-                        break;
-                    }
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
+                } else {//pawn and knight
                     break;
                 }
-
-                if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
-                    continue;
-                }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {
-                    continue;
-                }
-                if (i == 3 && movingHistory.isEmpty()) {
-                    legalMoves.add(distPos);
-                } else if (i == 2) {
-                    legalMoves.add(distPos);
-                }
+            } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
+                break;
             }
-            for (int i = 2; i < 4; i++) {
-                Position move = attackingOffset[i];
-                Position distPos = pos.sum(move);
 
-                king = (King) board.getBlackKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker.getPos().equals(distPos)) {
-                        legalMoves.add(distPos);
-                    } else break;
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
-                    break;
-                }
+            if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
+                continue;
+            }
+            Tile distTile = board.getTile(distPos);
+            if (distTile.isOcupied()) {
+                continue;
+            }
+            if (i == a+1 && movingHistory.isEmpty()) {
+                legalMoves.add(distPos);
+            } else if (i == a) {
+                legalMoves.add(distPos);
+            }
+        }
+        for (int i = a; i < b; i++) {
+            Position move = attackingOffset[i];
+            Position distPos = pos.sum(move);
+            if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
+                Piece checker = king.getCheckers(board).get(0);
+                if (checker.getPos().equals(distPos)) {
+                    legalMoves.add(distPos);
+                } else continue;
+            } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
+                break;
+            }
 
-                if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
-                    continue;
-                }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {//if tile ocupied check if color of piece same or not
-                    Color attackedPieceColor = distTile.getPiece().getColor();
-                    if (attackedPieceColor != color) {
+            if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
+                continue;
+            }
+            Tile distTile = board.getTile(distPos);
+            if (distTile.isOcupied()) {//if tile ocupied check if color of piece same or not
+                Color attackedPieceColor = distTile.getPiece().getColor();
+                if (attackedPieceColor != color) {
+                    legalMoves.add(distPos);
+                } else continue;
+            }
+            Tile tile = board.getTile(pos(distPos.x, this.pos.y));
+            if ((tile.isOcupied() && (tile.getPiece() instanceof Pawn) && (tile.getPiece().getColor() != this.color))) {
+                Move lastMove = board.getMovingHistory().get(board.getMovingHistory().size() - 1);
+                if (lastMove.getSecondPosition().equals(tile.getPiece().pos)) {
+                    if (Math.abs(lastMove.getSecondPosition().y - lastMove.getFirstPosition().y) == 2) {
                         legalMoves.add(distPos);
-                    } else {
-                        continue;
                     }
                 }
             }
         }
+
         for (Piece piece : pieces) {
             if (!(piece instanceof SlidingPiece)) {
                 continue;
@@ -210,60 +176,48 @@ public class Pawn extends Piece {
             for (int i = 0; i < 2; i++) {
                 Position move = attackingOffset[i];
                 Position distPos = pos.sum(move);
-
-                King king = (King) board.getWhiteKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker.getPos().equals(distPos)) {
-                        attackMoves.add(distPos);
-                    } else break;
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
-                    break;
-                }
-
                 if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
                     continue;
                 }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {//if tile ocupied check if color of piece same or not
-                    Color attackedPieceColor = distTile.getPiece().getColor();
-                    if (attackedPieceColor != color) {
-                        attackMoves.add(distPos);
-                    } else {
-                        continue;
-                    }
-                }
+                attackMoves.add(distPos);
             }
         } else {
             for (int i = 2; i < 4; i++) {
                 Position move = attackingOffset[i];
                 Position distPos = pos.sum(move);
-
-                King king = (King) board.getBlackKing();
-                if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
-                    Piece checker = king.getCheckers(board).get(0);
-                    if (checker.getPos().equals(distPos)) {
-                        attackMoves.add(distPos);
-                    } else break;
-                } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
-                    break;
-                }
-
                 if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
                     continue;
                 }
-                Tile distTile = board.getTile(distPos);
-                if (distTile.isOcupied()) {//if tile ocupied check if color of piece same or not
-                    Color attackedPieceColor = distTile.getPiece().getColor();
-                    if (attackedPieceColor != color) {
-                        attackMoves.add(distPos);
-                    } else {
-                        continue;
-                    }
-                }
+                attackMoves.add(distPos);
             }
         }
         return attackMoves;
+    }
+
+    public boolean canBePromoted() {
+        if (this.color == Color.WHITE) {
+            return this.pos.y == 7;
+        } else {
+            return this.pos.y == 0;
+        }
+    }
+
+    public void promote(Piece piece, Board board) {
+        List<Piece> pieces;
+        if (this.color == Color.WHITE) {
+            pieces = board.getWhitePieces();
+        } else {
+            pieces = board.getBlackPieces();
+        }
+        pieces.remove(this);
+        pieces.add(piece);
+        piece.setPos(this.pos);
+        board.getTile(this.pos).setPiece(piece);
+    }
+
+    @Override
+    public String getType() {
+        return "Pawn";
     }
 }
 

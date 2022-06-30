@@ -26,19 +26,19 @@ public class Knight extends Piece {
             Tile curTile = board.getTile(pos);
             curTile.setPiece(null);//set curTile piece null
             Tile finTile = board.getTile(distPos);
+            Piece capturedPiece = null;
             if (finTile.isOcupied()) {
-                Piece capturedPiece = finTile.getPiece();
+                capturedPiece = finTile.getPiece();
                 List<Piece> pieces;
                 if (capturedPiece.getColor() == Color.WHITE) pieces = board.getWhitePieces();
                 else pieces = board.getBlackPieces();
                 pieces.remove(capturedPiece);//if tile is ocupied remove captured piece from the list of pieces
             }
             finTile.setPiece(this);//set finTile piece -> this piece
+            board.addToMovingHistory(pos,distPos,capturedPiece);
             pos = distPos;//update position
-            attackedPositions.clear();
-            attackedPositions.addAll(calculateAttackMoves(board));//update attacked position
+            board.recalculateAttackingPositions();//update attacked position
             movingHistory.add(distPos);//add move to history
-            board.calculateThreatMaps();
             return true;
         } else return false;
     }
@@ -57,27 +57,26 @@ public class Knight extends Piece {
         }
         for (Position move : movingOffset) {
             Position distPos = pos.sum(move);
+            if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
+                continue;
+            }
             if (king.isChecked(board) && king.getCheckers(board).size() < 2) {//if king checked by one piece
                 Piece checker = king.getCheckers(board).get(0);
                 if(checker instanceof SlidingPiece){//if piece is sliding
                     if(((SlidingPiece) checker).getPositionsToDefend(checker.getPos(),king.getPos()).contains(distPos)){
                         legalMoves.add(distPos);
                     } else {
-                        break;
+                        continue;
                     }
                 }else {//pawn and knight
                     if(checker.getPos().equals(distPos)){
                         legalMoves.add(distPos);
                     } else {
-                        break;
+                        continue;
                     }
                 }
             } else if (king.isChecked(board) && king.getCheckers(board).size() >= 2) {//if king checked by more then one piece
                 break;
-            }
-
-            if (!Position.isPosible(distPos)) {//if move isn't possible(not on existing tiles)
-                continue;
             }
             Tile distTile = board.getTile(distPos);
             if (distTile.isOcupied()) {//if tile ocupied check if color of king same or not
@@ -117,5 +116,10 @@ public class Knight extends Piece {
             legalMoves.add(distPos);
         }
         return legalMoves;
+    }
+
+    @Override
+    public String getType() {
+        return "Knight";
     }
 }

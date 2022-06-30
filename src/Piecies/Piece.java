@@ -3,10 +3,7 @@ package Piecies;
 import Game.Board;
 import Game.Color;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public abstract class Piece implements Cloneable{
     protected Position pos;//position on board
@@ -47,9 +44,10 @@ public abstract class Piece implements Cloneable{
 
     public abstract Set<Position> calculateAttackMoves(Board board);
 
+    public abstract String getType();
+
     public void calculateStartingAttackedPositions(Board board){
-        attackedPositions.clear();
-        attackedPositions.addAll(calculateLegalMoves(board));
+        attackedPositions = calculateAttackMoves(board);
     }
 
 
@@ -78,6 +76,8 @@ public abstract class Piece implements Cloneable{
     @Override
     public Object clone() throws CloneNotSupportedException {
         Piece newPiece = (Piece) super.clone();
+        newPiece.movingHistory = new ArrayList<>();
         return newPiece;
     }
+
 }
